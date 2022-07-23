@@ -41,13 +41,13 @@ One of the most used persistence methods is to create scheduled tasks. Most mali
 
 WE must see all active scheduled tasks and past event logs related to scheduled tasks to see the full picture.
 
-#####Using Autoruns tool (RUN AS ADMINISTRATOR)
+#### Using Autoruns tool (RUN AS ADMINISTRATOR)
 This tool is part of sysinternals by microsoft. We can view all scheduled tasks on the host machine along with the the details like description of the applications, publisher name, timestamps and full path of the file which is scheduled to execute.Windows has many scheduled tasks of it own like windows defender etc so we can have unneccassary tasks which generate unneccasary cluster making it timetaking task. We must first analyze those tasks which have no publisher , as theres a good chance that a custom script or application created by user is scheduled to run.We must analyze the file from the path of scheduled task.
 
-#####Using windows task scheduler
+#### Using windows task scheduler
 we can also use windows own task scheduler application to see all scheduled task.This also works same as autoruns but autoruns shows information in single window in cleaner way.
 
-#####Using cli
+#### Using cli
 We can use cli to see scheduled tasks, this must only be used if we only have command line access.
 Run "schtasks" to see all tasks
 
