@@ -7,8 +7,13 @@
  /var/run/utmp: maintains a full accounting of the current status of the system, system boot time (used by uptime), recording user logins at which terminals, logouts, system events etc.
  /var/log/wtmp: acts as a historical utmp
  /var/log/btmp: records failed login attempts
+
  
---------------------------------------------------------------------------------------------------------------------------------------------------------------
+**********************************************************************************************************************************************************************************
+
+
+
+
 
 # Memory and processes forensics
 
@@ -56,7 +61,19 @@ Kill the malicious processes usinf "kill" or "killall" command
 
 
 
---------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+**********************************************************************************************************************************************************************************
+
+
+
+
+
+
+
+
 
 # Investigating Endpoint 
 
@@ -111,6 +128,7 @@ If possible, it is healthier to revert the system with a clean image or a snapsh
 
 
 
+
  
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -157,9 +175,73 @@ we can see all iptables rules to identify if something is out of ordinary.
 
 ------------------------------------------------------------------------------------------------------------------------
 
-## Investigating for Persistence
 
-### User account activities
+
+## Investigating  Logs
+
+As an incident responder, we must know which actions on the system are recorded, where these actions are stored, and how we can use this information during our incident response procedure. 
+
+
+### Investigating syslog
+
+The path of syslogs are
+ - /var/log/syslog
+ - /var/log/messages
+These logs record 
+- Execution of cron jobs
+- Execution of services
+
+
+### access.log
+
+The path of access logs are (depend on webserver in use)
+- /var/log/apache2/access.log
+- /var/log/nginx/access.log
+
+These logs record web requests and web logs
+
+
+
+### auth.log
+
+These logs are saved at
+- /var/log/auth.log
+- /var/log/secure
+
+These logs record
+- Logon events
+- User creation 
+- eventsGroup
+- eventsUser 
+
+
+
+### lastlog
+
+These logs are saved at
+- /var/log/lastlog
+
+They record Last logon information
+
+
+### bash_history
+This file is stored in user's home directory and is hidden
+- /home/username/.bash_history
+
+
+They contain Executed commands by the user through terminal
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------
+
+
+
+# Investigating for Persistence
+
+## User account activities
 
 Attackers add new users and modify existing users to ensure persistence. We can read passwd file to see users present on system.
 
@@ -169,7 +251,11 @@ If the passwd file has incorrect permissions, users can be compromised by editin
 
 In addition, the shell information of the users should be checked. Shell information of users who should not have shell should be double-checked.
 
-#### see user creation/deletion/modify related activity
+We can also see shell history of users. It can be of bash shell or if zsh is in use then.zsh_history
+
+> cat /home/username/.bash_history
+
+### see user creation/deletion/modify related activity
 
 If the attacker has not cleaned the auth.log file, it is possible to detect newly created users via the auth.log file.
 
@@ -184,7 +270,7 @@ To see users who changed their password
 cat /var/log/auth.log  | grep passwd
 
 
-#### Identifying user groups and permissions
+### Identifying user groups and permissions
 
 After identifying the users, the groups that these users are included in, and the authorizations defined specifically for these users should also be determined.
 
@@ -211,14 +297,14 @@ cat /var/log/auth.log | grep groupadd
 cat /var/log/auth.log | grep usermod
 
 
-#### seeing current logged in users
+### seeing current logged in users
 
 With the help of some tools that are installed by default in most linux systems, users with an active connection on the operating system can be listed. Its recommended installing as few new tools as possible in order to preserve the integrity of the device during the incident response procedure. 
 
 The command last,users, who give such information and are already present in linux
 
   
-#### Investigating ssh activities
+### Investigating ssh activities
 
 
 The /var/log/auth.log file can be examined to detect users logged into the system via SSH. This file includes successful logins as well as unsuccessful logons. In this way, we can detect brute-force attacks from within the auth.log file.
@@ -243,30 +329,239 @@ The following steps should be followed in order to detect users who can conduct 
  
  
  
-#### Eradication
+### Eradication
 
 we can delete any users created and files downloaded/created by attackers. we must also do a AV scan and perform a pentest on endpoint to harden the system and fix any broken permissions etc. 
  
  
+------------------------------------------------------------------------------------------------------------------------ 
  
  
+ 
+## Unix Services (creation/modification)
+
+Since the services are activated in the background, they give the attackers the option to re-start or activate with a different command in the case of the service not working properly. Thus, it is a commonly chosen method to ensure persistence. 
+
+Services has statuses
+
+- Active means they are running
+- Enabled means they will execute at every boot
+- Waiting means its waiting for a system event to occur then it will execute.
+
+Services have a .service file containing its configuration. We must analyse these to see which binaries are executed for services and determine should they be allowed or are they malicious.
+There three sections in a service file
+
+- unit : info related to the service/ metadata
+- install : actions when a unit is activated/deactivated
+- service : This holds the binaries to execute along with the argument. This one is most relevant to us.
+
+### Investigating Services
+
+we must identify when the services will run and which users can run services
+
+
+
+#### Seeing all services
+we can list all services which have a valid service file using systemctl. We can see statuses of all the services
+
+> systemctl list-units --type=service
+
+or 
+
+> service --status-all
+
+
+#### Finding Possible malicious service files
+
+Services files created by users and systemctl daemon are present in
+
+> /etc/systemd/system/
+
+Services files installed by rpm packages
+
+>  /usr/lib/systemd/system/ 
+
+ Service file created at runtime
+
+>  /run/systemd/system/ 
+
+If we know the incident timeframe, we can scan systemwide files ending with .service  and creation date of incident time. We can provide Month or year etc. We can extend search with egrep
+
+> find / -type f -iname "*.service" -ls | grep -i "Nov"
+
+ 
+
+#### Investigating Deleted Services
+
+If the attacker no longer needed a service, that would have been deleted,but we must investigate it.If the time frame of the cyber-attack is known, examining the services executed during this timeframe will help us accurately identify the TTP of the attacker. Since we do not know the name of the service, we cannot conduct a specific search in the logs. At this point, we must evaluate the logs that have occurred during the attack’s timeframe. 
+
+> sudo journalctl --since "2021-05-07 00:00" --until "2021-05-07 23:59"
+ 
+ This will list unneccassary logs too in that timeframe, we can filter the result by filtering by unit name . We can use -u switch to specify unit name. WE can also grep for strings like service,unit etc to be more specific For e.g
+ 
+ > sudo journalctl -u cron --since "2021-05-07 00:00" --until "2021-05-07 23:59"
+ 
+  
+ 
+#### Analysing malicious or anamolous services
+
+
+
+Now we have shortlisted some suspicious services, we will analyze them
+
+First we collect its status , by following command
+
+> systemctl status servicename
+
+or
+
+> service servicename status
+ 
+We can see configuration file path from above command and it should be under "systemd/system"  directories. We need to open the file and analyse it.
+
+we can see if a user has created a new service file or modified an existing one by stat command. If it matches our incident timeframe then we are on right path
+
+> stat servicefile
+
+
+We must examine whether this service has been activated before, and if it has, we must examine its service logs. In order to view the logs for the service, we can use the journalctl tool. We can view logs relating to a specific service by using the “-u” parameter and inputting the name of the unit. 
+
+> sudo journalctl -u service-name.service 
+
+We can filter by incident timeframe
+
+> sudo journalctl -u cron --since "2021-05-07 00:00" --until "2021-05-07 23:59"
+
+
+### Eradication
+
+In the Eradication step of the incident response, the services created and changed by the attacker must be deleted and the system must be restored to its former state.In addition, we must stop the services created and changed by the attacker. 
+
+1. We can stop the service with the commands below. 
+> sudo systemctl stop servicename
+
+or
+
+> sudo service servicename stop
+
+2. We must also disable the service incase its enabled or else it will start at boot
+
+> systemctl disable servicename	
+
+3. We must remove configurations files related to attacker activities
+
+> rm filepath
+
+4. After all this we must reload our services daemon
+
+> sudo systemctl daemon-reload
+
  
  
  
 ------------------------------------------------------------------------------------------------------------------------
   
+
+## Cron Jobs
+
+Attackers occasionaly abuse the cron feature  since this is widely used in organisations for automated tasks
+
+Every user on a system has his own list of cronjobs (crontab) so we must analyse them seperately 
+
+To analysing systemwide crontab
+
+> cat /etc/crontab
+  
+  
+### Analysing User's crontab
+
+TO analyze each user's cronjob seperately  , here -l is forlisting and -u for username
+
+> crontab -lu username  
+
+We can also see all users crontabs at one time  by reading crontab files
+
+> cat /var/spool/cron/crontabs/*
+> cat /var/spool/cron/*
+  
+### Analysing Deleted crontabs
+
+Detecting only active cron jobs may not be sufficient to detect attacker cron job activities. In a situation where the attacker deletes the cron jobs he/she created because there is no need, it will not be possible to detect the activities of the attacker through active cron jobs. We can read syslogs to detect cron daemon activities. We can also use journalctl by specifying cron unit and if we know attack time we can add that too to filter out the noise
+
+> cat /var/log/syslog | grep CRON  
+  
+  or
+  
+> journalctl -u cron
+
+> journalctl -u cron --since "2022-07-27 00:00" --until "2021-07-28 23:59"
+  
+  
+### Finding malicious cronjobs
+
+After the cron jobs in the system are identified, we can start analyzing these cron jobs. First we need to understand when the cron job will run.Attackers often add the reverse shell command as a cron job. Such commands must be determined in the crontab.
+
+A good starting point for our cron job examination is to analyze the cron jobs that have been executed from suspicious locations. For example, a bash script that is being executed under a /tmp directory is suspicious.   
+
+After identifying the malicious cron jobs, we must check whether these cron jobs have been executed before or not. By examining the cron logs, we can identify whether these cron jobs have been executed in the past or not. We can find this info same as when looking for delted cronjobs
+
+> cat /var/log/syslog | grep CRON  
+  
+  or
+  
+> journalctl -u cron
+
+> journalctl -u cron --since "2022-07-27 00:00" --until "2021-07-28 23:59"s
+
+
+### Eradication
+
+
+During the eradication step of incident response, we must delete the cron jobs added by the attacker and revert the cron jobs that have been changed by the attacker.We can conduct changes on the crontab with the command below. 
+
+> crontab -e
+
+To edit a crontab of specified user
+
+> crontab -eu username
+
+we can also remove the crontab of a user by -r switch.This can come handy if a user has created a new user , then we should delete his/her crontab🎗️
+  
+  
+
+
+------------------------------------------------------------------------------------------------------------------------
+
+## SSH Keys
+
+We first must verify the compromised user or attacker created useraccount. We should know which user on the system can have ssh keys(Knowing what is normal) and if a user isnt supposed to be having keys then we must investigate that user's activities.
+
+After the user creates the key pairs on his own device, he/she writes the public key to the "~/.ssh/authorized_keys" file on the server that he/she will access. Thus, the user can now access the server without using the username-password pair.This feature is used by attackers to ensure persistence. By adding their own key to the "authorized_keys" file, the attackers can access the device whenever they want.
+
+During the incident response procedure, we must identify the SSH keys added by the attacker, and we must delete these keys in order to block the attacker from accessing the device.The “authorized_keys” file is located in the “.ssh” directory in the main directory of users. We can use the command below to identify all “authorized_keys” files.   
+
+> find / -name 'authorized_keys'
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+ 
+------------------------------------------------------------------------------------------------------------------------
+ 
+## Bash_rc & Bash_profile (.profile)
+
+These are shell related files and each user have their own shell files in home directory, so we should investigate all user files on a compromised endpoint.
+
+Within the .bashrc and .bash_profile files have commands within them that will run when the shell is activated. Attackers often add reverse shell commands within these files in order to maintain persisitence. 
+
+These files can be  found in 
+
+> /home/username/.bashrc
+
+> /home/username/{.profile  or bash_profile}
+ 
+ 
+------------------------------------------------------------------------------------------------------------------------
+
   
   
   
