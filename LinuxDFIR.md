@@ -101,14 +101,14 @@ find /tmp -newermt "2021-10-25 00:00:00" ! -newermt "2021-10-25 23:59:00"
 
 Instead of determining a certain time frame, we can also filter by modification date prior to X or after X. 
 
-find / -mtime +X
-find / -mtime -X
+> find / -mtime +X
+> find / -mtime -X
 
 #### File permission change date
 
 When the ownership of a file, the directories in a file or the content of a file is changed by the attacker, the Change Date of the file changes. For various reasons, the attacker may change the authorizations and ownership of the file. With the help of the find command, we can search based on change date. 
 
-find / -ctime +X
+> find / -ctime +X
 
 #### Analysing File owners
 
