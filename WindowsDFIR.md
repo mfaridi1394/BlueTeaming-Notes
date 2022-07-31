@@ -1,9 +1,15 @@
-#  Memory Analysis
+#  Live Memory Analysis
 
-### Live analysis (active)
 
  The best way to identify a malicious activity that is actively running in the system is to conduct a memory analysis. If the attacker(s) is accessing the system remotely at that moment, and if he/she is stealing data or making an interaction in any way, there is a process that is allowing this. To identify the process allowing this, a memory analysis can be conducted. 
- 
+
+### Using Procmon
+
+Procmon is a sysinternal tool by microsoft. We can use procmon to see list of active processes, processes history (not currently active) and file system monitoring. Procmon must be setup at each endpoint for continous monitoring and this can help us during our investigation as we can construct process timeline with it. Its file monitoring also shows current and recently interacted files their path , user which accessed it and time etc. Attackers or malware interact with files one way or another on disk so we can also look for suspicious files using procmon
+
+Sysmon is advanced form of procmon which allows the procmon and additonal functionality to be integrated with windows event so its more better since we can get siem alerts via sysmon.For e.g if a process has been created via remote thread (process injection etc) which is common in malware's, a windows event is generated which we can get in out siem alerts.
+
+### Using ProcessHacker
  Use PROCESS HACKER TOOL , run as administrator
  
  It provides processes view,network connections which will help us find c2communication and process related to it.
@@ -17,7 +23,7 @@
 3-We must also see digital signature status of all processes , to see whether it is verified or not. Always look into unsigned processes just to be safe.To see signature status Open the “Process” section in Process Hacker and right click on the “Name” section that is right below it and click “Choose columns”. In the window that pops up, send the “verification status” and “Verified Signer” choices to the “Active Columns” section and click OK. Thus, you will be able to view the signature status of the files relating the actively running processes and by whom it was signed
 
 
-### Memory Dump analysis (passive)
+
 
 
 
@@ -84,6 +90,16 @@ This tool is part of sysinternals by microsoft. We can view all scheduled tasks 
 we can also use windows own task scheduler application to see all scheduled task.This also works same as autoruns but autoruns shows information in single window in cleaner way.
 
 
+#### Startup Folders
+
+
+To detect If any malicious files are placed in Startup folder , visit following paths
+
+1- C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+2- C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp
+
+
+
 
 #### Using cli
 We can use cli to see scheduled tasks, this must only be used if we only have command line access.
@@ -111,53 +127,190 @@ Attackers often setup a windows service to maintain persistence.They may use leg
 
 
 
-### Registry Run Keys / Startup Folder
+### Registry Forensics
 
-Attackers often play with the “Registry” values or leave a file in the “Startup” folder. Thus ensuring that the requested file is run when a user opens a session.This technique is more stealthy then task scheduler ands installing services  and its harder to detect too.Registry run keys are created at runtime, attackers can add their own keys which perform an attacker controlled action at startup.
+Threat actors often abuse windows registry keys and hives to persist.
 
-To detect If any malicious files are placed in Startup folder , visit following paths
+#### System wide Registry Hives
 
-1- C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
-2- C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp
+If we are accessing a live system, we will be able to access the registry using regedit.exe, and you will be greeted with all of the standard root keys we learned about in the previous task. However, if we only have access to a disk image, we must know where the registry hives are located on the disk. The majority of these hives are located in the C:\Windows\System32\Config directory and are:
+
+    DEFAULT (mounted on HKEY_USERS\DEFAULT)
+    SAM (mounted on HKEY_LOCAL_MACHINE\SAM)
+    SECURITY (mounted on HKEY_LOCAL_MACHINE\Security)
+    SOFTWARE (mounted on HKEY_LOCAL_MACHINE\Software)
+    SYSTEM (mounted on HKEY_LOCAL_MACHINE\System)
 
 
-To detect malicious registry key runs
+#### User HIves
+Apart from these hives, two other hives containing user information can be found in the User profile directory. For Windows 7 and above, a user’s profile directory is located in C:\Users\<username>\ where the hives are:
 
-The following run keys are created by default on Windows systems:
+    These both files are hidden
 
- HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run
- HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunOnce
- HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run
- HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce 
- 
-The following Registry keys can be used to set startup folder items for persistence: 
- 
- HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\UserShellFolders
- HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\ShellFolders
- HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellFolders
- HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserShellFolders 
- 
- 
- The following Registry keys can control automatic startup of services during boot:
+    NTUSER.DAT (mounted on HKEY_CURRENT_USER when a user logs in)  -> C:\Users\<username>\
+    USRCLASS.DAT (mounted on HKEY_CURRENT_USER\Software\CLASSES)   -> C:\Users\<username>\AppData\Local\Microsoft\Windows  
 
- HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServices Once
- HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServices Once
- HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServices
- HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServices 
- 
- 
- Using policy settings to specify startup programs creates corresponding values in either of two ^^ Registry keys:
+#### Recently Ran programs
 
- HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run
- HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run
+There is another hive called amcache hive.This hive is located in C:\Windows\AppCompat\Programs\Amcache.hve. Windows creates this hive to save information on programs that were recently run on the system. 
+
+#### Registry logs and Backups
+
+Some other very vital sources of forensic data are the registry transaction logs and backups. The transaction logs can be considered as the journal of the changelog of the registry hive. Windows often uses transaction logs when writing data to registry hives. This means that the transaction logs can often have the latest changes in the registry that haven't made their way to the registry hives themselves. The transaction log for each hive is stored as a .LOG file in the same directory as the hive itself. It has the same name as the registry hive, but the extension is .LOG. For example, the transaction log for the SAM hive will be located in C:\Windows\System32\Config in the filename SAM.LOG. Sometimes there can be multiple transaction logs as well. In that case, they will have .LOG1, .LOG2 etc., as their extension. It is prudent to look at the transaction logs as well when performing registry forensics.
+
+Registry backups are the opposite of Transaction logs. These are the backups of the registry hives located in the C:\Windows\System32\Config directory. These hives are copied to the C:\Windows\System32\Config\RegBack directory every ten days. It might be an excellent place to look if you suspect that some registry keys might have been deleted/modified recently.
+
+
+#### Analyzing Registry Hives
+
+We can analyse the  registry either live on the system or by copying the hives and investigating them locally which is recommended. We can use Autoruns tool to inspect live registry or ftk registry accessor etc
+
+##### On Live systems :
  
- 
-#### Using Autoruns tool to inspect registry keys:
- 
- By opening the “Logon” and “Explorer” tabs, we can view the registry values that we have mentioned above. By checking the “Control Path” sections, we can check to see whether there is a suspicious file or not. If there are a high number of registry values in front of us, in order to save time, we can start by examining the registry values that do not have any values in the “Description” and “Publisher” sections.Theres a option of hide windows entries in autoruns which is enabled by default, to see all entries unset this option.
+ In Autoruns we can use logon and explorer tabs to inspect registry. By checking the controlpath section , we can verify of a malicious file . If there are many reg values we can first analyze those keys which dont have any description or publisher information.Theres a option of hide windows entries in autoruns which is enabled by default, to see all entries unset this option.
 
 We can also check “Event Log”s, when a registry value is changed, an “EventID 4657” log is created. We can continue your analysis by filtering the security logs. 
 
+
+##### Offline investigations
+
+Now that we have copy of registry hives from pc in investigation , we must analyze these hives from our forensics workstation. Note that autopsy and kape helps this process by automatically carving important foreniscs artifacts from registry,  but we should know how to do it manually. We can use following tool for analysing
+
+> Zimmerman's Registry Explorer
+
+
+
+
+
+##### Analysing registry artifacts 
+
+1. OS version :  We must find os version of the system in investigation. This info is stored in
+
+> SOFTWARE\Microsoft\Windows NT\CurrentVersion
+
+2. Control Set :  The hives containing the machine’s configuration data used for controlling system startup are called Control Sets. Windows creates a volatile Control Set when the machine is live, called the CurrentControlSet (HKLM\SYSTEM\CurrentControlSet). For getting the most accurate system information, this is the hive that we will refer to. We can find out which Control Set is being used as the CurrentControlSet by looking at the following registry value:
+
+> SYSTEM\Select\Current
+
+Last known good config is at
+
+> SYSTEM\Select\LastKnownGood
+
+3. Computer Name :
+
+> SYSTEM\CurrentControlSet\Control\ComputerName\ComputerName 
+
+4. TimeZone Information : For accuracy, it is important to establish what time zone the computer is located in. This will help us understand the chronology of the events as they happened
+
+> SYSTEM\CurrentControlSet\Control\TimeZoneInformation
+
+5. Network Information : 
+
+> SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces
+
+Each Interface is represented with a unique identifier (GUID) subkey, which contains values relating to the interface’s TCP/IP configuration. This key will provide us with information like IP addresses, DHCP IP address and Subnet Mask, DNS Servers, and more. This information is significant because it helps you make sure that you are performing forensics on the machine that you are supposed to perform it on.
+
+The past networks a given machine was connected to can be found in the following locations:
+
+> SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Unmanaged
+
+> SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Managed
+
+6. AutoRun Applications
+
+The following registry keys include information about programs or commands that run when a user logs on. 
+
+> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Run               (user hives)
+
+> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\RunOnce           (user hives)
+ 
+> SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce                      (system hives)
+
+> SOFTWARE\Microsoft\Windows\CurrentVersion\policies\Explorer\Run         (system hives)
+
+> SOFTWARE\Microsoft\Windows\CurrentVersion\Run                           (system hives)
+ 
+7. StartUp Items
+
+Following keys are manipulated for startup execution 
+
+> Software\Microsoft\Windows\CurrentVersion\Explorer\UserShellFolders          (user hives)
+> Software\Microsoft\Windows\CurrentVersion\Explorer\ShellFolders              (user hives)
+> SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellFolders              (system hives)
+> SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserShellFolders          (system hives)
+> SOFTWARE\Microsoft\Windows\CurrentVersion\policies\Explorer\Run              (system hives)
+
+
+8. Windows Services
+
+Attackers can manipulate services related keys to add malicious services for persistence
+  
+ > SYSTEM\CurrentControlSet\Services :  IN  this registry key, if the start key is set to 0x02, this means that this service will start at boot. 
+ > Software\Microsoft\Windows\CurrentVersion\RunServices Once
+ > Software\Microsoft\Windows\CurrentVersion\RunServices Once
+ > Software\Microsoft\Windows\CurrentVersion\RunServices
+ > Software\Microsoft\Windows\CurrentVersion\RunServices 
+
+ 9. User information / Security policies 
+
+ The SAM hive contains user account information, login information, and group information. This information is mainly located in the following location:
+
+> SAM\Domains\Account\Users
+
+The information contained here includes the relative identifier (RID) of the user, number of times the user logged in, last login time, last failed login, last password change, password expiry, password policy and password hint, and any groups that the user is a part of.
+
+
+10. Recent Files : Windows maintains a list of recently opened files for each user. As we might have seen when using Windows Explorer, it shows us a list of recently used files. This information is stored in the NTUSER hive and can be found on the following location:
+ 
+ 
+ > NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs
+
+ Registry Explorer allows us to sort data contained in registry keys quickly. For example, the Recent documents tab arranges the Most Recently Used (MRU) file at the top of the list. Registry Explorer also arranges them so that the Most Recently Used (MRU) file is shown at the top of the list and the older ones later.
+
+Another interesting piece of information in this registry key is that there are different keys with file extensions, such as .pdf, .jpg, .docx etc. These keys provide us with information about the last used files of a specific file extension. So if we are looking specifically for the last used PDF files, we can look at the following registry key:
+
+> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs\.pdf
+
+11. Recent Microsoft office documents : Since Majority of initial access is through phishing, Analysing microsoft office related artifacts is important as it is most used Document suite
+
+we can look for office version at
+> NTUSER.DAT\Software\Microsoft\Office\VERSION
+
+The version number for each Microsoft Office release is different. An example registry key will look like this:
+
+> NTUSER.DAT\Software\Microsoft\Office\15.0\Word
+ 
+ Starting from Office 365, Microsoft now ties the location to the user's live ID. In such a scenario, the recent files can be found at the following location. 
+
+> NTUSER.DAT\Software\Microsoft\Office\VERSION\UserMRU\LiveID_####\FileMRU
+
+In such a scenario, the recent files can be found at the following location. This location also saves the complete path of the most recently used files.
+
+
+12. ShellBags : When any user opens a folder, it opens in a specific layout. Users can change this layout according to their preferences. These layouts can be different for different folders. This information about the Windows 'shell' is stored and can identify the Most Recently Used files and folders. Since this setting is different for each user, it is located in the user hives. We can find this information on the following locations:
+
+> USRCLASS.DAT\Local Settings\Software\Microsoft\Windows\Shell\Bags
+
+> USRCLASS.DAT\Local Settings\Software\Microsoft\Windows\Shell\BagMRU
+
+> NTUSER.DAT\Software\Microsoft\Windows\Shell\BagMRU
+
+> NTUSER.DAT\Software\Microsoft\Windows\Shell\Bags
+ 
+ We can use shellbag explorer for analyzing shellbags. We must point to user hives files
+
+
+ 13. Dialog Box MRU's :  When we open or save a file, a dialog box appears asking us where to save or open that file from. It might be noticed that once we open/save a file at a specific location, Windows remembers that location. This implies that we can find out recently used files if we get our hands on this information. We can do so by examining the following registry keys
+
+>NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\OpenSavePIDlMRU
+>NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\LastVisitedPidlMRU
+
+
+
+14. Windows Explorer Search : Another way to identify a user's recent activity is by looking at the paths typed in the Windows Explorer address bar or searches performed using the following registry keys, respectively.
+
+> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths
+> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
