@@ -50,6 +50,38 @@ Reads the history of the web search engine on the device and shows it on a singl
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+# Investigating Event Logs
+
+we can investigate event logs through event viewer and filter down the noise via time filter. This is handy if we know the incident time and avoid un neccassary logs. However event viewer is not as versatile. We can use DeepBlueCli tool which is written in powershell and its used for threat hunting. We can see its proper full usage at following github page
+
+https://github.com/sans-blue-team/DeepBlueCLI
+
+
+This script can retrieve event logs from a live system or we can pass it evtx files if we have compromised host event logs files offline.
+
+.\DeepBlue.ps1 <event log name> <evtx filename>
+
+See the Set-ExecutionPolicy Readme if you receive a 'running scripts is disabled on this system' error.
+Process local Windows security event log (PowerShell must be run as Administrator):
+
+.\DeepBlue.ps1
+
+or:
+
+.\DeepBlue.ps1 -log security
+Process local Windows system event log:
+
+.\DeepBlue.ps1 -log system
+Process evtx file:
+
+.\DeepBlue.ps1 .\evtx\new-user-security.evtx
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 # Identifying Persistence on hacked systems
