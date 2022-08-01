@@ -3,6 +3,10 @@
 
  The best way to identify a malicious activity that is actively running in the system is to conduct a memory analysis. If the attacker(s) is accessing the system remotely at that moment, and if he/she is stealing data or making an interaction in any way, there is a process that is allowing this. To identify the process allowing this, a memory analysis can be conducted. 
 
+
+
+Process Hacker can also be used to monitor processes,network sockets, and disks snad services etc. Procmon and process hacker can be powerful together , procmon for historical process analysis and process hacker for live anlaysis
+
 ### Using Procmon
 
 Procmon is a sysinternal tool by microsoft. We can use procmon to see list of active processes, processes history (not currently active) and file system monitoring. Procmon must be setup at each endpoint for continous monitoring and this can help us during our investigation as we can construct process timeline with it. Its file monitoring also shows current and recently interacted files their path , user which accessed it and time etc. Attackers or malware interact with files one way or another on disk so we can also look for suspicious files using procmon
