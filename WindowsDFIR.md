@@ -1,11 +1,7 @@
 #  Live Memory Analysis
 
 
- The best way to identify a malicious activity that is actively running in the system is to conduct a memory analysis. If the attacker(s) is accessing the system remotely at that moment, and if he/she is stealing data or making an interaction in any way, there is a process that is allowing this. To identify the process allowing this, a memory analysis can be conducted. 
-
-
-
-Process Hacker can also be used to monitor processes,network sockets, and disks snad services etc. Procmon and process hacker can be powerful together , procmon for historical process analysis and process hacker for live anlaysis
+ The best way to identify a malicious activity that is actively running in the system is to conduct a memory analysis. If the attacker(s) is accessing the system remotely at that moment, and if he/she is stealing data or making an interaction in any way, there is a process that is allowing this. To identify the process allowing this, a memory analysis can be conducted. WE can use SANS following poster https://www.sans.org/posters/hunt-evil/ as a reference when analyzing windows processes
 
 ### Using Procmon
 
@@ -33,6 +29,15 @@ Sysmon is advanced form of procmon which allows the procmon and additonal functi
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+# Automated forensics artifacts collention 
+
+
+We can automate the whole process using tools like autopsy,kape etc. We can either run these tools directly on suspected host or we can create their disk image and then analys in our workstation. TO know what to look for reference the manual dfir process in next section down below
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 
 # Investigating User activity 
@@ -50,38 +55,6 @@ Reads the history of the web search engine on the device and shows it on a singl
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Investigating Event Logs
-
-we can investigate event logs through event viewer and filter down the noise via time filter. This is handy if we know the incident time and avoid un neccassary logs. However event viewer is not as versatile. We can use DeepBlueCli tool which is written in powershell and its used for threat hunting. We can see its proper full usage at following github page
-
-https://github.com/sans-blue-team/DeepBlueCLI
-
-
-This script can retrieve event logs from a live system or we can pass it evtx files if we have compromised host event logs files offline.
-
-.\DeepBlue.ps1 <event log name> <evtx filename>
-
-See the Set-ExecutionPolicy Readme if you receive a 'running scripts is disabled on this system' error.
-Process local Windows security event log (PowerShell must be run as Administrator):
-
-.\DeepBlue.ps1
-
-or:
-
-.\DeepBlue.ps1 -log security
-Process local Windows system event log:
-
-.\DeepBlue.ps1 -log system
-Process evtx file:
-
-.\DeepBlue.ps1 .\evtx\new-user-security.evtx
-
-
-
-
-
-
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 # Identifying Persistence on hacked systems
@@ -165,7 +138,7 @@ Attackers often setup a windows service to maintain persistence.They may use leg
 
 ### Registry Forensics
 
-Threat actors often abuse windows registry keys and hives to persist.
+Threat actors often abuse windows registry keys and hives to persist. We can also look at sans registry dfir cheatsheet for quick reference https://www.13cubed.com/downloads/dfir_cheat_sheet.pdf
 
 #### System wide Registry Hives
 
@@ -347,6 +320,109 @@ In such a scenario, the recent files can be found at the following location. Thi
 
 > NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths
 > NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery
+
+
+15. UserAssist : Windows keeps track of applications launched by the user using Windows Explorer for statistical purposes in the User Assist registry keys. These keys contain information about the programs launched, the time of their launch, and the number of times they were executed. However, programs that were run using the command line can't be found in the User Assist keys. The User Assist key is present in the NTUSER hive, mapped to each user's GUID. We can find it at the following location:
+
+> NTUSER.DAT\Software\Microsoft\Windows\Currentversion\Explorer\UserAssist\{GUID}\Count
+
+
+16. ShimCache : ShimCache is a mechanism used to keep track of application compatibility with the OS and tracks all applications launched on the machine. Its main purpose in Windows is to ensure backward compatibility of applications. It is also called Application Compatibility Cache (AppCompatCache). It is located in the following location in the SYSTEM hive:
+
+> SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache
+
+ShimCache stores file name, file size, and last modified time of the executables.
+
+Registry Explorer, doesn't parse ShimCache data in a human-readable format, so we go to another tool called AppCompatCache Parser, also a part of Eric Zimmerman's tools. It takes the SYSTEM hive as input, parses the data, and outputs a CSV file
+
+
+17. AmCache : The AmCache hive is an artifact related to ShimCache. This performs a similar function to ShimCache, and stores additional data related to program executions. This data includes execution path, installation, execution and deletion times, and SHA1 hashes of the executed programs. This hive is located in the file system at:
+
+> C:\Windows\appcompat\Programs\Amcache.hve
+
+Information about the last executed programs can be found at the following location in the hive:
+
+> Amcache.hve\Root\File\{Volume GUID}\
+
+
+18. Background/Desktop activity monitor : Background Activity Monitor or BAM keeps a tab on the activity of background applications. Similar Desktop Activity Moderator or DAM is a part of Microsoft Windows that optimizes the power consumption of the device. Both of these are a part of the Modern Standby system in Microsoft Windows.
+
+In the Windows registry, the following locations contain information related to BAM and DAM. This location contains information about last run programs, their full paths, and last execution time.
+
+> SYSTEM\CurrentControlSet\Services\bam\UserSettings\{SID}
+
+> SYSTEM\CurrentControlSet\Services\dam\UserSettings\{SID}
+
+
+
+19. External devices (usb etc)
+
+The following locations keep track of USB keys plugged into a system. These locations store the vendor id, product id, and version of the USB device plugged in and can be used to identify unique devices. These locations also store the time the devices were plugged into the system.
+
+> SYSTEM\CurrentControlSet\Enum\USBSTOR
+
+> SYSTEM\CurrentControlSet\Enum\USB
+
+Similarly, the following registry key tracks the first time the device was connected, the last time it was connected and the last time the device was removed from the system.  This is also shown in USBSTOR key
+
+> SYSTEM\CurrentControlSet\Enum\USBSTOR\Ven_Prod_Version\USBSerial#\Properties\{83da6326-97a6-4088-9453-a19231573b29}\####
+
+In this key, the #### sign can be replaced by the following digits to get the required information:
+Value   Information
+0064    First Connection time
+0066    Last Connection time
+0067    Last removal time
+
+We can find usb device name specifically by following
+
+> SOFTWARE\Microsoft\Windows Portable Devices\Devices
+
+We can compare the GUID we see here in this registry key and compare it with the Disk ID we see on keys mentioned in device identification to correlate the names with unique devices
+
+
+
+20. LNK File Analysis:
+
+> C:\username\AppData\Roaming\Microsoft\Windows\Recent
+
+Jump Lists (like LNK files on steroids):
+
+> C:\username\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations
+> C:\username\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations
+LNK files are actually embedded in the database structure in AutomaticDestinations
+
+21. Prefetcher and SuperFetch:
+
+• Prefetcher and SuperFetch are part of Windows' memory manager
+• Prefetcher is the less capable version included in Windows XP
+• Prefetcher was extended by SuperFetch and ReadyBoost in Windows Vista+
+• ReadyBoot replaces Prefetcher for the boot process if > 700MB RAM
+• Tries to make sure often-accessed data can be read from the fast RAM instead of slow HDD
+• Can speed up boot and shorten amount of time to start programs
+
+> C:\Windows\Prefetch
+
+filename-hash(xxxxxxxx).pf
+Example: CALC.EXE-AC08706A.pf
+The hash is a hash of the file’s path. In this example, CALC.EXE is located in C:\Windows\System32. If it
+were copied to another location (like the Desktop) and executed, a new .pf file would be created reflecting a
+hash of the new path.
+
+> HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\MemoryManagement\PrefetchParameters
+
+EnablePrefetcher Key:
+0 = Disabled
+1 = Application prefetching enabled
+2 = Boot prefetching enabled (default on Windows 2003 only)
+3 = Application and Boot prefetching enabled (default)
+• Task Scheduler calls Windows Disk Defragmenter every three (3) days
+• When idle, lists of files and directories referenced during boot process and application startups is
+processed
+• The processed result is stored in Layout.ini in the Prefetch directory, and is subsequently passed to
+the Disk Defragmenter, instructing it to re-order those files into sequential positions on the physical
+hard drive
+
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
