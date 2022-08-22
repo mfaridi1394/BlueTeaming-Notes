@@ -29,10 +29,22 @@ Sysmon is advanced form of procmon which allows the procmon and additonal functi
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Automated forensics artifacts collention 
+# Automated forensics artifacts collection 
 
 
 We can automate the whole process using tools like autopsy,kape etc. We can either run these tools directly on suspected host or we can create their disk image and then analys in our workstation. TO know what to look for reference the manual dfir process in next section down below
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Investigating Event logs
+
+we can use threat hunting scripts which will process event logs and enrich with known signatures to find iocs and mitre ttps. Some of good projects are
+
+1. DeepBlueCli
+2. Hayabusa
+
 
 
 
@@ -136,7 +148,7 @@ Attackers often setup a windows service to maintain persistence.They may use leg
 
 
 
-### Registry Forensics
+# Windows Forensics Artifacts (timeline,evidence of execution,user activity, system activity, external devices,network artifacts)
 
 Threat actors often abuse windows registry keys and hives to persist. We can also look at sans registry dfir cheatsheet for quick reference https://www.13cubed.com/downloads/dfir_cheat_sheet.pdf
 
