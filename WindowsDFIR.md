@@ -352,9 +352,14 @@ Registry Explorer, doesn't parse ShimCache data in a human-readable format, so w
 
 > C:\Windows\appcompat\Programs\Amcache.hve
 
+  We can acquire amcache file by ftkimager.We can use AppCacheParser.exe to parse out contents of amcache and analyse it.
+ 
 Information about the last executed programs can be found at the following location in the hive:
 
 > Amcache.hve\Root\File\{Volume GUID}\
+ 
+ In windows 7 a artifact named RecentFileCache.bcf which stores info of recent files
+ > c:\windows\appcompat\programs\recentfilecache.bcf
 
 
 18. Background/Desktop activity monitor : Background Activity Monitor or BAM keeps a tab on the activity of background applications. Similar Desktop Activity Moderator or DAM is a part of Microsoft Windows that optimizes the power consumption of the device. Both of these are a part of the Modern Standby system in Microsoft Windows.
@@ -393,15 +398,35 @@ We can compare the GUID we see here in this registry key and compare it with the
 
 
 
-20. LNK File Analysis:
+20. LNK File Analysis(Files existence evidence,mac address of device etc,metadata,hex signatures,digital info):
 
-> C:\username\AppData\Roaming\Microsoft\Windows\Recent
+ They can give us metadata info of files which had lnk created. Deleted files lnk files are still there, giving us info of deleted files that once executed.
+ They have extension of shortcut. They are created when a shortcut is created or windows create lnk files automatically for most used apps for optimisation purposes
+ 
+> C:\users\username\AppData\Roaming\Microsoft\Windows\Recent
+ 
+ For microsoft office products (docs,pdfs,xls)
+ 
+ > C:\users\username\AppData\Roaming\Microsoft\Windows\Office\Recent
+ 
+ We can use LNK explorer by eztools to carve info out of lnk files. We will run this tool against ]recent where all lnk files are
 
 Jump Lists (like LNK files on steroids):
 
+ Automatic destinations are jumplists  of general windows workflow like when user pins a file on taskbar,recycle bin prompts etc.LNK files are actually embedded in the database structure in AutomaticDestinations
+ 
 > C:\username\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations
-> C:\username\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations
-LNK files are actually embedded in the database structure in AutomaticDestinations
+
+ CustomDestinations belongs to Third party applications, and contains windows,prompts etc of those installed 3rd party apps
+ 
+ > C:\username\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations
+ 
+ To analyse jumplists we use jumplist explorer by ez tools. There are different jumplists files in \automaticdestination location, and each file contains info of different apps. Each software has its unique jumpapp id
+ We can look here and analyse the desired software id file
+ 
+ https://github.com/EricZimmerman/JumpList/blob/master/JumpList/Resources/AppIDs.txt
+ 
+
 
 21. Prefetcher and SuperFetch:
 
@@ -434,9 +459,44 @@ processed
 the Disk Defragmenter, instructing it to re-order those files into sequential positions on the physical
 hard drive
 
+22. SRUM (system resource monitor)
+ 
+ we can use this artifact to see processes,network related info, power consumption . This can help for e.g in case of cryptomining related incident etc
+ 
+ path is
+ > c:\windows\system32\sru\srudb.dat
+ We can use srum-dump tool to analyse srum file. Artifact can be acquired by ftkimager
+ 
+ 23. NTFS Analysis (Timestamps, Detecting timestamps tampering, $I03 files for evidence of deletion)
+ 
+ Timetamps info are stored in master file table $MFT
+ 
+ We can acquire it from ftk imager its path is
+ 
+ > c:\$MFT
+ 
+ It isnt visible by default, we must set its attribute
+ run command on cmd
+ > attrib -s -h $MFT
+ NOW we can copy it anywhere or do whatever we want
+ Use analyzeMFT.py script from github to analyse this. 
+ 
+ The output will be in csv file , we can detect timestamp tamperinng by comparing standard_information coloumn time with File_Name coloumn time.
+ 
+ ##### $I30 Files (evidence of execution)
+ 
+ these files are avialable in every directory across the filesystem and it contains file  and directory info ,structure etc of that parent directory. It basically contains info of slack space,which is created whenever a file is deleted and space is unallocated from a certain directory
+ 
+ We can use ftk imager to acquire this file
+ 
+ we can analyze it with INDXparser.py which will list downs the slack space info and any files deleted. This may come handy when we want to know if attacker had any file at any point of time and was safely deleted. Use this tool with -d switch to see slack space giving us info of deleted files.It also gives lst accessed last modified timestamps, helping us creating a timeline
+ 
+ 
+ 
+ 
+ 
 
-
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 ### Investigating files and binaries on the system left by attacker
