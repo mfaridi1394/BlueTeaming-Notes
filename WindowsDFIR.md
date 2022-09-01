@@ -308,7 +308,7 @@ The version number for each Microsoft Office release is different. An example re
 In such a scenario, the recent files can be found at the following location. This location also saves the complete path of the most recently used files.
 
 
-12. ShellBags : When any user opens a folder, it opens in a specific layout. Users can change this layout according to their preferences. These layouts can be different for different folders. This information about the Windows 'shell' is stored and can identify the Most Recently Used files and folders. Since this setting is different for each user, it is located in the user hives. We can find this information on the following locations:
+12. ShellBags : When any user opens a folder, it opens in a specific layout. Users can change this layout according to their preferences. These layouts can be different for different folders. This information about the Windows 'shell' is stored and can identify the Most Recently Used files and folders. This artifact is very useful because this shows evidence of folders visit,file existence,path visited.Since this setting is different for each user, it is located in the user hives. We can find this information on the following locations:
 
 > USRCLASS.DAT\Local Settings\Software\Microsoft\Windows\Shell\Bags
 
@@ -379,6 +379,8 @@ The following locations keep track of USB keys plugged into a system. These loca
 > SYSTEM\CurrentControlSet\Enum\USBSTOR
 
 > SYSTEM\CurrentControlSet\Enum\USB
+ 
+> SYSTEM\MountedDevices
 
 Similarly, the following registry key tracks the first time the device was connected, the last time it was connected and the last time the device was removed from the system.  This is also shown in USBSTOR key
 
@@ -493,8 +495,37 @@ hard drive
  
  
  
+24. Recycle Bin Forensics
+ 
+ When Files are deleted they are stored in
+ 
+ > c:\$Recycle.Bin\SID\*
+ 
+ Here two files are created for single deleted file
+ 
+ The $I files contains metadata of file and $R files contain recoverable bytes of the file
+ 
+ For deleted file named delfile.txt
+ 
+ > c:\$Recycle.Bin\SID\$Idelfile.txt
+ 
+ > c:\$Recycle.Bin\SID\$Rdelfile.txt
+ 
+ We can analyse these $I files by using a tool named $IParser
+ 
+ If we copy the $R file, it renames the file with random  6 char and restores recoverable bytes of file
  
  
+ 25. Rdp Forensics
+ 
+ Whenever we use rdp client on a windows to connect some remote pc, it stores it cache, and in that cache there are different 32 or 16 bp of images of that tty session. This can prove useful because we can have literal graphical snaps of rdp activity on remote session. We have to make out the activity by our selves because images are not stored in order and are mixed etc.
+ 
+ Rdp Cache files are stored in following path and have extensions of .BIN
+ 
+ > c:\users\username\AppData\Local\Microsoft\Terminal Server Client\ Cache 
+ 
+ 
+ We can use bmc-tools from github to process these bins file. We will get thousands of small pictures depending on session time or user activity etc.
 
    ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
