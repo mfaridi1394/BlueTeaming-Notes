@@ -34,6 +34,11 @@ Sysmon is advanced form of procmon which allows the procmon and additonal functi
 
 We can automate the whole process using tools like autopsy,kape etc. We can either run these tools directly on suspected host or we can create their disk image and then analys in our workstation. TO know what to look for reference the manual dfir process in next section down below
 
+### FTK imager 
+We can collect only relative artifacts(file,hives,directories) using ftkimager custom image . This way we dont need full disk to be imaged, we can only select selective  thigns which are required.
+
+### Kape
+ Kape has cli and gui interfaces. It has modules and targets files installed with it.Targets are type of artifacts and Modules are Eric zimmermen tools to analyse the artifacts with its relative tools.We can manually analyse using EZ tools but its nice to have integrated with KAPE. We can select selective targers or all targets and modules
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -250,6 +255,12 @@ The following registry keys include information about programs or commands that 
 > SOFTWARE\Microsoft\Windows\CurrentVersion\policies\Explorer\Run         (system hives)
 
 > SOFTWARE\Microsoft\Windows\CurrentVersion\Run                           (system hives)
+
+ We as attacker can add some registry case which triggers a event because of other event, With following example whenever notepad exits, evil.exe is executed. We should investigate the silentprocess keys and below keys
+ 
+> reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\notepad.exe" /v GlobalFlag /t REG_DWORD /d 512
+> reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\notepad.exe" /v ReportingMode /t REG_DWORD /d 1
+> reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\notepad.exe" /v MonitorProcess /d "C:\temp\evil.exe"
  
 7. StartUp Items
 
@@ -398,7 +409,7 @@ We can find usb device name specifically by following
 
 We can compare the GUID we see here in this registry key and compare it with the Disk ID we see on keys mentioned in device identification to correlate the names with unique devices
 
-
+We can use USBDetective to automate.
 
 20. LNK File Analysis(Files existence evidence,mac address of device etc,metadata,hex signatures,digital info):
 
@@ -526,8 +537,31 @@ hard drive
  
  
  We can use bmc-tools from github to process these bins file. We will get thousands of small pictures depending on session time or user activity etc.
+ 
+ 26. VolumeShadow analysis
+ 
+ we can see all available volumeshadows by following command
+ 
+ > vssadmin list shadows
+ 
+ Then we can get the copy of volumeshadow
+  > mklink /d OutputDirectory "Shadow Copy Volume path"
+ 
+ Now we can copy this to analysis machine and mount and analyse
+ 
+ First mount the Disk image
+ 
+ > ewfmount diskimage /mnt/anyname
+ 
+ we can mount rawvshadow directly from diskimage
+ 
+ > vshadowinfo /mnt/anyname /mnt/vssmount
 
-   ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Then mount the any vssimage you want from /mnt/vssmount
+ 
+ > mount -o ro,loop,show_sys_files,streams_interface=windows /mnt/vssmounted/anyname
+
+ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 ### Investigating files and binaries on the system left by attacker
