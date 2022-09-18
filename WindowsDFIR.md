@@ -1,4 +1,4 @@
-#  Live Memory Analysis
+#  Live Memory Analysis, network monitoring
 
 
  The best way to identify a malicious activity that is actively running in the system is to conduct a memory analysis. If the attacker(s) is accessing the system remotely at that moment, and if he/she is stealing data or making an interaction in any way, there is a process that is allowing this. To identify the process allowing this, a memory analysis can be conducted. WE can use SANS following poster https://www.sans.org/posters/hunt-evil/ as a reference when analyzing windows processes
@@ -43,13 +43,6 @@ We can collect only relative artifacts(file,hives,directories) using ftkimager c
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-# Investigating Event logs
-
-we can use threat hunting scripts which will process event logs and enrich with known signatures to find iocs and mitre ttps. Some of good projects are
-
-1. DeepBlueCli
-2. Hayabusa
-
 
 
 
@@ -57,7 +50,7 @@ we can use threat hunting scripts which will process event logs and enrich with 
 
 
 
-# Investigating User activity 
+## Investigating User activity 
 
 Tracking user activity can come in handy. We get a visual of what events occured in some specific time , which can help us because we can investigate the user activities during the time of incident, thus reducing unneccassary noise.
 
@@ -74,7 +67,7 @@ Reads the history of the web search engine on the device and shows it on a singl
 
 
 
-# Identifying Persistence on hacked systems
+## Identifying Persistence and post exploitation on hacked systems
 
 
 
@@ -134,9 +127,6 @@ Run "schtasks" to see all tasks
 Attackers can delete scheduled tasks after they served its purpose.We can go through event logs to see creation of tasks,updation or deletion.This gives us much more data and wider angle . To see in Event viewer go to Applications and Services Logs-Microsoft-Windows-TaskScheduler-Operational.evtx” section located in Task Scheduler. We can also see in Security logs with EventID "4698" for Schedule task creation and EventID "4702" for scheduled task update.We can also see the command ran by this task and soforth.This enables us to see even the deleted scheduled tasks which we couldnt see in above methods.
 
 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
 
 ### Services installed or updated
 
@@ -152,417 +142,30 @@ Attackers often setup a windows service to maintain persistence.They may use leg
 
 
 
+### Investigating Event logs
 
-# Windows Forensics Artifacts (timeline,evidence of execution,user activity, system activity, external devices,network artifacts)
+we can use threat hunting scripts which will process event logs and enrich with known signatures to find iocs and mitre ttps. Some of good projects are
 
-Threat actors often abuse windows registry keys and hives to persist. We can also look at sans registry dfir cheatsheet for quick reference https://www.13cubed.com/downloads/dfir_cheat_sheet.pdf
+1. DeepBlueCli
+2. Hayabusa
+3. chainsaw
 
-#### System wide Registry Hives
 
-If we are accessing a live system, we will be able to access the registry using regedit.exe, and you will be greeted with all of the standard root keys we learned about in the previous task. However, if we only have access to a disk image, we must know where the registry hives are located on the disk. The majority of these hives are located in the C:\Windows\System32\Config directory and are:
+### Detecting Credentials Dumping (lsass and ntds.dit)
 
-    DEFAULT (mounted on HKEY_USERS\DEFAULT)
-    SAM (mounted on HKEY_LOCAL_MACHINE\SAM)
-    SECURITY (mounted on HKEY_LOCAL_MACHINE\Security)
-    SOFTWARE (mounted on HKEY_LOCAL_MACHINE\Software)
-    SYSTEM (mounted on HKEY_LOCAL_MACHINE\System)
+Ntds.dit file mostly resides on Windows active directory environments
 
+If attacker manages to dump this and lsass then attackers can get plaintext credentials both local and domain wide creds
 
-#### User HIves
-Apart from these hives, two other hives containing user information can be found in the User profile directory. For Windows 7 and above, a user’s profile directory is located in C:\Users\<username>\ where the hives are:
+Attackers can dump ntds.dit by using lolbins such as ntdsutil.
 
-    These both files are hidden
+A thing to note is that whenever ntds.dit is dumped, a backup copy is made which is then dumped
 
-    NTUSER.DAT (mounted on HKEY_CURRENT_USER when a user logs in)  -> C:\Users\<username>\
-    USRCLASS.DAT (mounted on HKEY_CURRENT_USER\Software\CLASSES)   -> C:\Users\<username>\AppData\Local\Microsoft\Windows  
+It creates events in event logs
 
-#### Recently Ran programs
+> Event IDs 103 and 327
 
-There is another hive called amcache hive.This hive is located in C:\Windows\AppCompat\Programs\Amcache.hve. Windows creates this hive to save information on programs that were recently run on the system. 
-
-#### Registry logs and Backups
-
-Some other very vital sources of forensic data are the registry transaction logs and backups. The transaction logs can be considered as the journal of the changelog of the registry hive. Windows often uses transaction logs when writing data to registry hives. This means that the transaction logs can often have the latest changes in the registry that haven't made their way to the registry hives themselves. The transaction log for each hive is stored as a .LOG file in the same directory as the hive itself. It has the same name as the registry hive, but the extension is .LOG. For example, the transaction log for the SAM hive will be located in C:\Windows\System32\Config in the filename SAM.LOG. Sometimes there can be multiple transaction logs as well. In that case, they will have .LOG1, .LOG2 etc., as their extension. It is prudent to look at the transaction logs as well when performing registry forensics.
-
-Registry backups are the opposite of Transaction logs. These are the backups of the registry hives located in the C:\Windows\System32\Config directory. These hives are copied to the C:\Windows\System32\Config\RegBack directory every ten days. It might be an excellent place to look if you suspect that some registry keys might have been deleted/modified recently.
-
-
-#### Analyzing Registry Hives
-
-We can analyse the  registry either live on the system or by copying the hives and investigating them locally which is recommended. We can use Autoruns tool to inspect live registry or ftk registry accessor etc
-
-##### On Live systems :
- 
- In Autoruns we can use logon and explorer tabs to inspect registry. By checking the controlpath section , we can verify of a malicious file . If there are many reg values we can first analyze those keys which dont have any description or publisher information.Theres a option of hide windows entries in autoruns which is enabled by default, to see all entries unset this option.
-
-We can also check “Event Log”s, when a registry value is changed, an “EventID 4657” log is created. We can continue your analysis by filtering the security logs. 
-
-
-##### Offline investigations
-
-Now that we have copy of registry hives from pc in investigation , we must analyze these hives from our forensics workstation. Note that autopsy and kape helps this process by automatically carving important foreniscs artifacts from registry,  but we should know how to do it manually. We can use following tool for analysing
-
-> Zimmerman's Registry Explorer
-
-
-
-
-
-##### Analysing registry artifacts 
-
-1. OS version :  We must find os version of the system in investigation. This info is stored in
-
-> SOFTWARE\Microsoft\Windows NT\CurrentVersion
-
-2. Control Set :  The hives containing the machine’s configuration data used for controlling system startup are called Control Sets. Windows creates a volatile Control Set when the machine is live, called the CurrentControlSet (HKLM\SYSTEM\CurrentControlSet). For getting the most accurate system information, this is the hive that we will refer to. We can find out which Control Set is being used as the CurrentControlSet by looking at the following registry value:
-
-> SYSTEM\Select\Current
-
-Last known good config is at
-
-> SYSTEM\Select\LastKnownGood
-
-3. Computer Name :
-
-> SYSTEM\CurrentControlSet\Control\ComputerName\ComputerName 
-
-4. TimeZone Information : For accuracy, it is important to establish what time zone the computer is located in. This will help us understand the chronology of the events as they happened
-
-> SYSTEM\CurrentControlSet\Control\TimeZoneInformation
-
-5. Network Information : 
-
-> SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces
-
-Each Interface is represented with a unique identifier (GUID) subkey, which contains values relating to the interface’s TCP/IP configuration. This key will provide us with information like IP addresses, DHCP IP address and Subnet Mask, DNS Servers, and more. This information is significant because it helps you make sure that you are performing forensics on the machine that you are supposed to perform it on.
-
-The past networks a given machine was connected to can be found in the following locations:
-
-> SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Unmanaged
-
-> SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Managed
-
-6. AutoRun Applications
-
-The following registry keys include information about programs or commands that run when a user logs on. 
-
-> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Run               (user hives)
-
-> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\RunOnce           (user hives)
- 
-> SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce                      (system hives)
-
-> SOFTWARE\Microsoft\Windows\CurrentVersion\policies\Explorer\Run         (system hives)
-
-> SOFTWARE\Microsoft\Windows\CurrentVersion\Run                           (system hives)
-
- We as attacker can add some registry case which triggers a event because of other event, With following example whenever notepad exits, evil.exe is executed. We should investigate the silentprocess keys and below keys
- 
-> reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\notepad.exe" /v GlobalFlag /t REG_DWORD /d 512
-> reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\notepad.exe" /v ReportingMode /t REG_DWORD /d 1
-> reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SilentProcessExit\notepad.exe" /v MonitorProcess /d "C:\temp\evil.exe"
- 
-7. StartUp Items
-
-Following keys are manipulated for startup execution 
-
-> Software\Microsoft\Windows\CurrentVersion\Explorer\UserShellFolders          (user hives)
-> Software\Microsoft\Windows\CurrentVersion\Explorer\ShellFolders              (user hives)
-> SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellFolders              (system hives)
-> SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\UserShellFolders          (system hives)
-> SOFTWARE\Microsoft\Windows\CurrentVersion\policies\Explorer\Run              (system hives)
-
-
-8. Windows Services
-
-Attackers can manipulate services related keys to add malicious services for persistence
-  
- > SYSTEM\CurrentControlSet\Services :  IN  this registry key, if the start key is set to 0x02, this means that this service will start at boot. 
- > Software\Microsoft\Windows\CurrentVersion\RunServices Once
- > Software\Microsoft\Windows\CurrentVersion\RunServices Once
- > Software\Microsoft\Windows\CurrentVersion\RunServices
- > Software\Microsoft\Windows\CurrentVersion\RunServices 
-
- 9. User information / Security policies 
-
- The SAM hive contains user account information, login information, and group information. This information is mainly located in the following location:
-
-> SAM\Domains\Account\Users
-
-The information contained here includes the relative identifier (RID) of the user, number of times the user logged in, last login time, last failed login, last password change, password expiry, password policy and password hint, and any groups that the user is a part of.
-
-
-10. Recent Files : Windows maintains a list of recently opened files for each user. As we might have seen when using Windows Explorer, it shows us a list of recently used files. This information is stored in the NTUSER hive and can be found on the following location:
- 
- 
- > NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs
-
- Registry Explorer allows us to sort data contained in registry keys quickly. For example, the Recent documents tab arranges the Most Recently Used (MRU) file at the top of the list. Registry Explorer also arranges them so that the Most Recently Used (MRU) file is shown at the top of the list and the older ones later.
-
-Another interesting piece of information in this registry key is that there are different keys with file extensions, such as .pdf, .jpg, .docx etc. These keys provide us with information about the last used files of a specific file extension. So if we are looking specifically for the last used PDF files, we can look at the following registry key:
-
-> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs\.pdf
-
-11. Recent Microsoft office documents : Since Majority of initial access is through phishing, Analysing microsoft office related artifacts is important as it is most used Document suite
-
-we can look for office version at
-> NTUSER.DAT\Software\Microsoft\Office\VERSION
-
-The version number for each Microsoft Office release is different. An example registry key will look like this:
-
-> NTUSER.DAT\Software\Microsoft\Office\15.0\Word
- 
- Starting from Office 365, Microsoft now ties the location to the user's live ID. In such a scenario, the recent files can be found at the following location. 
-
-> NTUSER.DAT\Software\Microsoft\Office\VERSION\UserMRU\LiveID_####\FileMRU
-
-In such a scenario, the recent files can be found at the following location. This location also saves the complete path of the most recently used files.
-
-
-12. ShellBags : When any user opens a folder, it opens in a specific layout. Users can change this layout according to their preferences. These layouts can be different for different folders. This information about the Windows 'shell' is stored and can identify the Most Recently Used files and folders. This artifact is very useful because this shows evidence of folders visit,file existence,path visited.Since this setting is different for each user, it is located in the user hives. We can find this information on the following locations:
-
-> USRCLASS.DAT\Local Settings\Software\Microsoft\Windows\Shell\Bags
-
-> USRCLASS.DAT\Local Settings\Software\Microsoft\Windows\Shell\BagMRU
-
-> NTUSER.DAT\Software\Microsoft\Windows\Shell\BagMRU
-
-> NTUSER.DAT\Software\Microsoft\Windows\Shell\Bags
- 
- We can use shellbag explorer for analyzing shellbags. We must point to user hives files
-
-
- 13. Dialog Box MRU's :  When we open or save a file, a dialog box appears asking us where to save or open that file from. It might be noticed that once we open/save a file at a specific location, Windows remembers that location. This implies that we can find out recently used files if we get our hands on this information. We can do so by examining the following registry keys
-
->NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\OpenSavePIDlMRU
->NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\LastVisitedPidlMRU
-
-
-
-14. Windows Explorer Search : Another way to identify a user's recent activity is by looking at the paths typed in the Windows Explorer address bar or searches performed using the following registry keys, respectively.
-
-> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths
-> NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery
-
-
-15. UserAssist : Windows keeps track of applications launched by the user using Windows Explorer for statistical purposes in the User Assist registry keys. These keys contain information about the programs launched, the time of their launch, and the number of times they were executed. However, programs that were run using the command line can't be found in the User Assist keys. The User Assist key is present in the NTUSER hive, mapped to each user's GUID. We can find it at the following location:
-
-> NTUSER.DAT\Software\Microsoft\Windows\Currentversion\Explorer\UserAssist\{GUID}\Count
-
-
-16. ShimCache : ShimCache is a mechanism used to keep track of application compatibility with the OS and tracks all applications launched on the machine. Its main purpose in Windows is to ensure backward compatibility of applications. It is also called Application Compatibility Cache (AppCompatCache). It is located in the following location in the SYSTEM hive:
-
-> SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache
-
-ShimCache stores file name, file size, and last modified time of the executables.
-
-Registry Explorer, doesn't parse ShimCache data in a human-readable format, so we go to another tool called AppCompatCache Parser, also a part of Eric Zimmerman's tools. It takes the SYSTEM hive as input, parses the data, and outputs a CSV file
-
-
-17. AmCache : The AmCache hive is an artifact related to ShimCache. This performs a similar function to ShimCache, and stores additional data related to program executions. This data includes execution path, installation, execution and deletion times, and SHA1 hashes of the executed programs. This hive is located in the file system at:
-
-> C:\Windows\appcompat\Programs\Amcache.hve
-
-  We can acquire amcache file by ftkimager.We can use AppCacheParser.exe to parse out contents of amcache and analyse it.
- 
-Information about the last executed programs can be found at the following location in the hive:
-
-> Amcache.hve\Root\File\{Volume GUID}\
- 
- In windows 7 a artifact named RecentFileCache.bcf which stores info of recent files
- > c:\windows\appcompat\programs\recentfilecache.bcf
-
-
-18. Background/Desktop activity monitor : Background Activity Monitor or BAM keeps a tab on the activity of background applications. Similar Desktop Activity Moderator or DAM is a part of Microsoft Windows that optimizes the power consumption of the device. Both of these are a part of the Modern Standby system in Microsoft Windows.
-
-In the Windows registry, the following locations contain information related to BAM and DAM. This location contains information about last run programs, their full paths, and last execution time.
-
-> SYSTEM\CurrentControlSet\Services\bam\UserSettings\{SID}
-
-> SYSTEM\CurrentControlSet\Services\dam\UserSettings\{SID}
-
-
-
-19. External devices (usb etc)
-
-The following locations keep track of USB keys plugged into a system. These locations store the vendor id, product id, and version of the USB device plugged in and can be used to identify unique devices. These locations also store the time the devices were plugged into the system.
-
-> SYSTEM\CurrentControlSet\Enum\USBSTOR
-
-> SYSTEM\CurrentControlSet\Enum\USB
- 
-> SYSTEM\MountedDevices
-
-Similarly, the following registry key tracks the first time the device was connected, the last time it was connected and the last time the device was removed from the system.  This is also shown in USBSTOR key
-
-> SYSTEM\CurrentControlSet\Enum\USBSTOR\Ven_Prod_Version\USBSerial#\Properties\{83da6326-97a6-4088-9453-a19231573b29}\####
-
-In this key, the #### sign can be replaced by the following digits to get the required information:
-Value   Information
-0064    First Connection time
-0066    Last Connection time
-0067    Last removal time
-
-We can find usb device name specifically by following
-
-> SOFTWARE\Microsoft\Windows Portable Devices\Devices
-
-We can compare the GUID we see here in this registry key and compare it with the Disk ID we see on keys mentioned in device identification to correlate the names with unique devices
-
-We can use USBDetective to automate.
-
-20. LNK File Analysis(Files existence evidence,mac address of device etc,metadata,hex signatures,digital info):
-
- They can give us metadata info of files which had lnk created. Deleted files lnk files are still there, giving us info of deleted files that once executed.
- They have extension of shortcut. They are created when a shortcut is created or windows create lnk files automatically for most used apps for optimisation purposes
- 
-> C:\users\username\AppData\Roaming\Microsoft\Windows\Recent
- 
- For microsoft office products (docs,pdfs,xls)
- 
- > C:\users\username\AppData\Roaming\Microsoft\Windows\Office\Recent
- 
- We can use LNK explorer by eztools to carve info out of lnk files. We will run this tool against ]recent where all lnk files are
-
-Jump Lists (like LNK files on steroids):
-
- Automatic destinations are jumplists  of general windows workflow like when user pins a file on taskbar,recycle bin prompts etc.LNK files are actually embedded in the database structure in AutomaticDestinations
- 
-> C:\username\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations
-
- CustomDestinations belongs to Third party applications, and contains windows,prompts etc of those installed 3rd party apps
- 
- > C:\username\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations
- 
- To analyse jumplists we use jumplist explorer by ez tools. There are different jumplists files in \automaticdestination location, and each file contains info of different apps. Each software has its unique jumpapp id
- We can look here and analyse the desired software id file
- 
- https://github.com/EricZimmerman/JumpList/blob/master/JumpList/Resources/AppIDs.txt
- 
-
-
-21. Prefetcher and SuperFetch:
-
-• Prefetcher and SuperFetch are part of Windows' memory manager
-• Prefetcher is the less capable version included in Windows XP
-• Prefetcher was extended by SuperFetch and ReadyBoost in Windows Vista+
-• ReadyBoot replaces Prefetcher for the boot process if > 700MB RAM
-• Tries to make sure often-accessed data can be read from the fast RAM instead of slow HDD
-• Can speed up boot and shorten amount of time to start programs
-
-> C:\Windows\Prefetch
-
-filename-hash(xxxxxxxx).pf
-Example: CALC.EXE-AC08706A.pf
-The hash is a hash of the file’s path. In this example, CALC.EXE is located in C:\Windows\System32. If it
-were copied to another location (like the Desktop) and executed, a new .pf file would be created reflecting a
-hash of the new path.
-
-> HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\MemoryManagement\PrefetchParameters
-
-EnablePrefetcher Key:
-0 = Disabled
-1 = Application prefetching enabled
-2 = Boot prefetching enabled (default on Windows 2003 only)
-3 = Application and Boot prefetching enabled (default)
-• Task Scheduler calls Windows Disk Defragmenter every three (3) days
-• When idle, lists of files and directories referenced during boot process and application startups is
-processed
-• The processed result is stored in Layout.ini in the Prefetch directory, and is subsequently passed to
-the Disk Defragmenter, instructing it to re-order those files into sequential positions on the physical
-hard drive
-
-22. SRUM (system resource monitor)
- 
- we can use this artifact to see processes,network related info, power consumption . This can help for e.g in case of cryptomining related incident etc
- 
- path is
- > c:\windows\system32\sru\srudb.dat
- We can use srum-dump tool to analyse srum file. Artifact can be acquired by ftkimager
- 
- 23. NTFS Analysis (Timestamps, Detecting timestamps tampering, $I03 files for evidence of deletion)
- 
- Timetamps info are stored in master file table $MFT
- 
- We can acquire it from ftk imager its path is
- 
- > c:\$MFT
- 
- It isnt visible by default, we must set its attribute
- run command on cmd
- > attrib -s -h $MFT
- NOW we can copy it anywhere or do whatever we want
- Use analyzeMFT.py script from github to analyse this. 
- 
- The output will be in csv file , we can detect timestamp tamperinng by comparing standard_information coloumn time with File_Name coloumn time.
- 
- ##### $I30 Files (evidence of execution)
- 
- these files are avialable in every directory across the filesystem and it contains file  and directory info ,structure etc of that parent directory. It basically contains info of slack space,which is created whenever a file is deleted and space is unallocated from a certain directory
- 
- We can use ftk imager to acquire this file
- 
- we can analyze it with INDXparser.py which will list downs the slack space info and any files deleted. This may come handy when we want to know if attacker had any file at any point of time and was safely deleted. Use this tool with -d switch to see slack space giving us info of deleted files.It also gives lst accessed last modified timestamps, helping us creating a timeline
- 
- 
- 
-24. Recycle Bin Forensics
- 
- When Files are deleted they are stored in
- 
- > c:\$Recycle.Bin\SID\*
- 
- Here two files are created for single deleted file
- 
- The $I files contains metadata of file and $R files contain recoverable bytes of the file
- 
- For deleted file named delfile.txt
- 
- > c:\$Recycle.Bin\SID\$Idelfile.txt
- 
- > c:\$Recycle.Bin\SID\$Rdelfile.txt
- 
- We can analyse these $I files by using a tool named $IParser
- 
- If we copy the $R file, it renames the file with random  6 char and restores recoverable bytes of file
- 
- 
- 25. Rdp Forensics
- 
- Whenever we use rdp client on a windows to connect some remote pc, it stores it cache, and in that cache there are different 32 or 16 bp of images of that tty session. This can prove useful because we can have literal graphical snaps of rdp activity on remote session. We have to make out the activity by our selves because images are not stored in order and are mixed etc.
- 
- Rdp Cache files are stored in following path and have extensions of .BIN
- 
- > c:\users\username\AppData\Local\Microsoft\Terminal Server Client\ Cache 
- 
- 
- We can use bmc-tools from github to process these bins file. We will get thousands of small pictures depending on session time or user activity etc.
- 
- 26. VolumeShadow analysis
- 
- we can see all available volumeshadows by following command
- 
- > vssadmin list shadows
- 
- Then we can get the copy of volumeshadow
-  > mklink /d OutputDirectory "Shadow Copy Volume path"
- 
- Now we can copy this to analysis machine and mount and analyse
- 
- First mount the Disk image
- 
- > ewfmount diskimage /mnt/anyname
- 
- we can mount rawvshadow directly from diskimage
- 
- > vshadowinfo /mnt/anyname /mnt/vssmount
-
- Then mount the any vssimage you want from /mnt/vssmount
- 
- > mount -o ro,loop,show_sys_files,streams_interface=windows /mnt/vssmounted/anyname
-
- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+- A thing to be aware is that active directory automatically occasionaly makes the copies of ntds.dit for backup and cache purposes. It mostly shows backup location of those backups so we must always be aware of this to avoid false positives. If we know the timeframe of incident , we must see those event ids in that timeframe and additonaly we can look for evidence of execution for dumping tools like mimikatz or ntdsutil tool
 
 ### Investigating files and binaries on the system left by attacker
 
