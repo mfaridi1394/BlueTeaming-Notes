@@ -341,7 +341,7 @@ hard drive
  run command on cmd
  > attrib -s -h $MFT
  NOW we can copy it anywhere or do whatever we want
- Use analyzeMFT.py script from github to analyse this. 
+ Use MFTexplorer from EZ tools or analyzeMFT.py script from github  to analyse this. 
  
  The output will be in csv file , we can detect timestamp tamperinng by comparing standard_information coloumn time with File_Name coloumn time.
  
