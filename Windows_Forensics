@@ -81,6 +81,10 @@ Last known good config is at
 
 Each Interface is represented with a unique identifier (GUID) subkey, which contains values relating to the interface’s TCP/IP configuration. This key will provide us with information like IP addresses, DHCP IP address and Subnet Mask, DNS Servers, and more. This information is significant because it helps you make sure that you are performing forensics on the machine that you are supposed to perform it on.
 
+To see network profile related info like usage of vpns,proxies , information is stored in following Registry Key
+
+> HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles
+
 The past networks a given machine was connected to can be found in the following locations:
 
 > SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Unmanaged
