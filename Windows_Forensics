@@ -205,6 +205,8 @@ In such a scenario, the recent files can be found at the following location. Thi
 
 ShimCache stores file name, file size, and last modified time of the executables.
 
+Shimcache isnt evidence of execution in windows 10 , but is in 7/8 . Whenever user opens  a folder in file explorer, all the apps and shortcuts in view will be present in shimcache. If theres hundreds of file, as we scroll down or resize the explorer window to view more apps , each app in view for that explorer window  is in shimcache
+
 Registry Explorer, doesn't parse ShimCache data in a human-readable format, so we go to another tool called AppCompatCache Parser, also a part of Eric Zimmerman's tools. It takes the SYSTEM hive as input, parses the data, and outputs a CSV file
 
 
@@ -430,5 +432,40 @@ hard drive
 We can use Hibernation recon tool to process this file
 
 >  https://arsenalrecon.com/downloads/
+
+28. Eventtranscriptdb
+
+On windows system theres a db called eventtranscript which collects all diagnostic data, crash data, related to os which microsoft uses to imporve user experience. We can parse this db and see wealth of info related to the system
+
+Following tool can be used to see info of this db
+
+https://github.com/stuxnet999/EventTranscriptParser
+
+
+we can also use diagnostic data viewer from windows store to see the data in real time
+Following repository contains research related to this artifact
+https://github.com/AndrewRathbun/EventTranscript.db-Research
+
+
+29. User access logging (Only in windows server)
+
+These logs contains user access, system related data in windows servers.
+
+These are files with "mdb" extension in following location
+
+> c:\windows\system32\logfiles\sum\
+
+we need to use Rawcopy64.exe utility to acquire these data bases
+
+> start /wait Rawcopy64 /FileNamePath:<File Location> /OutputPath:<outputlocation>
+
+We now need to repair these db using esentutl
+
+> esentutl /p <Db file>
+
+Now we can analyse these dbs using SumEcmd tool from EZ tools
+
+
+
 
 
