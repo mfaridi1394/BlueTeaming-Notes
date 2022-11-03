@@ -276,12 +276,13 @@ We can use USBDetective to automate.
  We can use LNK explorer by eztools to carve info out of lnk files. We will run this tool against ]recent where all lnk files are
 
 Jump Lists (like LNK files on steroids):
+It gives recently accessed files and applications information
 
  Automatic destinations are jumplists  of general windows workflow like when user pins a file on taskbar,recycle bin prompts etc.LNK files are actually embedded in the database structure in AutomaticDestinations
  
 > C:\username\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations
 
- CustomDestinations belongs to Third party applications, and contains windows,prompts etc of those installed 3rd party apps
+ CustomDestinations belongs to Third party applications, and contains windows,prompts etc of those installed 3rd party apps. Browser tabs, urls visited can also be found under this
  
  > C:\username\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations
  
