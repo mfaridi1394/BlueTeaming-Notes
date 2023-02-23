@@ -146,9 +146,11 @@ Attackers often setup a windows service to maintain persistence.They may use leg
 
 we can use threat hunting scripts which will process event logs and enrich with known signatures to find iocs and mitre ttps. Some of good projects are
 
-1. DeepBlueCli
-2. Hayabusa
-3. chainsaw
+1. APT hunter
+2. ThreatHound
+3. DeepBlueCli
+4. Hayabusa
+5. chainsaw
 
 
 ### Detecting Credentials Dumping (lsass and ntds.dit)
