@@ -474,6 +474,20 @@ Muicache stores gui applications metadata as company name and friendlyappname. T
 > hkey_current_user\SOFTWARE\classes\Local Settings\Software\Microsoft\Windows\Shell\muicache
 
 
+31. Windows notification db
+this is a sqlite database which stores information about notifications contents. 
+> c:\users\username\appdata\local\microsoft\windows\notifications\wpndatabase.sqlite
+
+32. Windows Clipboard
+This db stores copied text and bitmap cache of images which are copied by users
+> c:\users\username\appdata\Local\ConnectedDevicesPlatform\<UserProfile>\activitiescache.db
+
+
+33. Windows Thumbs nail
+
+This artifact stores thumbnails, preview images etc of images, files, documents etc
+c:\user\username\AppData\Local\Microsoft\Windows\Explorer\thumbscachexxx.db or thumbsxxx.db
+
 
 
 
