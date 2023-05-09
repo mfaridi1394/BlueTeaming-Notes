@@ -276,7 +276,8 @@ We can use USBDetective to automate.
  We can use LNK explorer by eztools to carve info out of lnk files. We will run this tool against ]recent where all lnk files are
 
 Jump Lists (like LNK files on steroids):
-It gives recently accessed files and applications information
+
+INFO RICH ARTIFACT /. It gives recently accessed files and applications information, recently accessed urls from browsers, recently access documents,pdfs zips, settings all kind of information. Detailed analysis of this artifact can give us a very good overview of all kinds of activities on the endpoint
 
  Automatic destinations are jumplists  of general windows workflow like when user pins a file on taskbar,recycle bin prompts etc.LNK files are actually embedded in the database structure in AutomaticDestinations
  
