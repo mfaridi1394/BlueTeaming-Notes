@@ -497,6 +497,10 @@ This db is very useful and can help us find file paths of as windows index files
 In windows 11 its sqlite db instead of edb. Win 10 and 11 differences are covered in below link
 Link : https://www.aon.com/cyber-solutions/aon_cyber_labs/windows-search-index-the-forensic-artifact-youve-been-searching-for/
 
+35. Windows Timeline Db
+Theres a feature of windows which stores timeline for past 1 month of activies like app process file accesses, clipboard activities.
+
+> c:\users\username\appdata\Local\ConnectedDevicesPlatform\<UserProfile>\activitiescache.db
 
 
 
