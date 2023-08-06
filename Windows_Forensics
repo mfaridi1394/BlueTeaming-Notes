@@ -491,7 +491,7 @@ c:\user\username\AppData\Local\Microsoft\Windows\Explorer\thumbscachexxx.db or t
 
 34. Windows search index db
 
-This db is very useful and can help us find file paths of as windows index files regulary for quick search feature. We may also find some email related artifacts , last accessed urls in browser even if the history is itself deleted from the browser
+This db is very useful and stores partial file contents and can help us find file paths of as windows index files regulary for quick search feature. We may also find some email related artifacts , last accessed urls in browser even if the history is itself deleted from the browser
 
 > :\ProgramData\Microsoft\Search\Data\Application\Windows\Windows.edb
 In windows 11 its sqlite db instead of edb. Win 10 and 11 differences are covered in below link
