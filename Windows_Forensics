@@ -502,6 +502,15 @@ Theres a feature of windows which stores timeline for past 1 month of activies l
 
 > c:\users\username\appdata\Local\ConnectedDevicesPlatform\<UserProfile>\activitiescache.db
 
+36. Feature Usage Registry Key 
+
+The registry key “Feature Usage” stored under “NTUSER.DAT\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage” is a very interesting artefact that will track what a user is doing in direct relation to the task bar i.e. a user opening an application in the taskbar that has been minimised. 
+
+It tracks many interesting things – the two specific ones to this example are:
+
+    AppLaunch – tracks applications launched from the task bar that are pinned
+
+    AppSwitched – Shows when a user is physically switching from one application to another in the task bar (also proves executio 
 
 
 
