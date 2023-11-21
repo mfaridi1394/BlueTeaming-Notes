@@ -372,7 +372,9 @@ This would generate a csv timeline and an html summary report. Remember to start
 Hayabusa also has filters like timestamp filter which we can use to state from when to when analyse the logs based on timestamps. this makes faster prorcesssing and focused analysis. We also have computer name filters which are helpful when we have event logs from many different computers. we can use computer-metrics instead of csv timeline command when starting such an analysis. 
 
 Takajo can be used to extract some data like pwsh scrptblocks domains ips hashes lookup via VT from results of hayabusa(Optional,although i prefer manual analsysis of hayabusa results)
-We can then use chainsaw to validate further or use evtxecmd(preferred) for more thorough analysis
+We can then use chainsaw to validate further or use evtxecmd(preferred) for more thorough analysis.
+Create a jsonl timeline instead of csv from hayabusa and pass that to takajo to find any quick wins
+- .\takajo-2.1.0-win-x64.exe timeline-suspicious-processes -t "C:\Users\CyberJunkie\Downloads\hayabusa-2.10.1-win-64-bit\test.jsonl" --output "C:\Users\CyberJunkie\Downloads\takajo-2.1.0-win-x64\takajo-2.1.0-win-x64\res.csv"
 https://www.youtube.com/watch?v=HXNAnxADRGE&t=1365s
  
  
