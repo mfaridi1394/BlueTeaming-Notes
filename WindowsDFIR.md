@@ -365,7 +365,7 @@ o cmd.exe → conhost.exe 0xffffffff -ForceV1
  # Hayabus- Event log hunting
 
 ### Command line to use
-This would generate a csv timeline and an html summary report. Remember to start with core rules then core + and so on in order to widen threat hunt scope. Also use -U flag for utc, try without multiline(-M) as it adds more context
+This would generate a csv timeline and an html summary report. Remember to start with core rules then core + and so on in order to widen threat hunt scope. Also use -U flag for utc, try without multiline(-M) as it adds more context. You can use -l if doing live analysis
 -  hayabusa-2.10.1-win-x64.exe csv-timeline -d "C:\Users\CyberJunkie\Desktop\LogJammer\Event-Logs" --output test.csv -H test.html -U
 
 We can then use chainsaw to validate further or use evtxecmd(preferred) for more thorough analysis
