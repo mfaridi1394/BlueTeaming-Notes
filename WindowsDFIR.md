@@ -367,8 +367,12 @@ o cmd.exe → conhost.exe 0xffffffff -ForceV1
 ### Command line to use
 This would generate a csv timeline and an html summary report. Remember to start with core rules then core + and so on in order to widen threat hunt scope. Also use -U flag for utc, try without multiline(-M) as it adds more context. You can use -l if doing live analysis. -p flag is for profile, default is standard but make it verbose if detailed hunt is to be done
 -  hayabusa-2.10.1-win-x64.exe csv-timeline -d "C:\Users\CyberJunkie\Desktop\LogJammer\Event-Logs" --output test.csv -H test.html -U
+
+Hayabusa also has filters like timestamp filter which we can use to state from when to when analyse the logs based on timestamps. this makes faster prorcesssing and focused analysis. We also have computer name filters which are helpful when we have event logs from many different computers. we can use computer-metrics instead of csv timeline command when starting such an analysis.
+
 Takajo can be used to extract some data like pwsh scrptblocks domains ips hashes lookup via VT from results of hayabusa(Optional,although i prefer manual analsysis of hayabusa results)
 We can then use chainsaw to validate further or use evtxecmd(preferred) for more thorough analysis
+https://www.youtube.com/watch?v=HXNAnxADRGE&t=1365s
  
  
  
