@@ -369,7 +369,7 @@ This would generate a csv timeline and an html summary report. Remember to start
 
 -  hayabusa-2.10.1-win-x64.exe csv-timeline -d "C:\Users\CyberJunkie\Desktop\LogJammer\Event-Logs" --output test.csv -H test.html -U -P -T
 
-For quick wins we can use pivot keyword list command which will gather all important things like processes,comp names,ips,dns etc just like in memprocfs output
+For quick wins we can use pivot keyword list command which will gather all important things like processes,comp names,ips,dns etc just like in memprocfs output. ####ALWAYS START WITH THIS COMMAND THEN MOVE TO TIMELINE STUFF
 - .\hayabusa-2.10.1-win-x64.exe pivot-keywords-list -l -o pivotkeywordsexample
 
 Hayabusa also has filters like timestamp filter which we can use to state from when to when analyse the logs based on timestamps. this makes faster prorcesssing and focused analysis. We also have computer name filters which are helpful when we have event logs from many different computers. we can use computer-metrics instead of csv timeline command when starting such an analysis. 
