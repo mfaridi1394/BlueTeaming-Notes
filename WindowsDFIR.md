@@ -384,5 +384,8 @@ https://www.youtube.com/watch?v=HXNAnxADRGE&t=1365s
  
  
  
- 
+ # RDP forensics
+- Event id 1149 for analysing succesfull rdp connections to the machine being analysed. (Terminalservices Remoteconnectionmanager operational)
+- Event id 1102 for analysing the events related to the rdp connection made to another target server from the machine being analysed (RDPclient operational log)
+- Registry key "HKEY_CURRENT_USER\Software\Microsoft\Terminal Server Client" holds the ips and usernames used to connect to another rdp server from the machine being analysed.
 
