@@ -388,4 +388,10 @@ https://www.youtube.com/watch?v=HXNAnxADRGE&t=1365s
 - Event id 1149 for analysing succesfull rdp connections to the machine being analysed. (Terminalservices Remoteconnectionmanager operational)
 - Event id 1102 for analysing the events related to the rdp connection made to another target server from the machine being analysed (RDPclient operational log)
 - Registry key "HKEY_CURRENT_USER\Software\Microsoft\Terminal Server Client" holds the ips and usernames used to connect to another rdp server from the machine being analysed.
+# Memory forensics
+Start with automated stuff for quick wins like memprocfs via https://github.com/evild3ad/MemProcFS-Analyzer or just standalone tool. Then move on to  Volatility
+-MemProcFs Analyzer
+-Volatilty3 
+-Automated volatility - https://github.com/0x1-A/AutoMemProc_Beta
+- Timeline creater via volatiltiy through automation https://github.com/andreafortuna/autotimeliner
 
