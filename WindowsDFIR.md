@@ -362,7 +362,9 @@ o cmd.exe → conhost.exe 0xffffffff -ForceV1
 
  
  
- # Hayabus- Event log hunting
+ #  Event logs hunting
+
+## Using hayabusa
 
 ### Command line to use
 This would generate a csv timeline and an html summary report. Remember to start with core rules then core + and so on in order to widen threat hunt scope. Also use -U flag for utc, try without multiline(-M) as it adds more context. You can use -l if doing live analysis. -p flag is for profile, default is standard but make it verbose if detailed hunt is to be done. We can also use -m flag to state minimum severity level for example if we state -m high then the timeline csv will only have the events starting from high and above, if we do it medium then we will have medium,high and critical alerts and so on. Theres also  a flag -P which loads only the most successfull rules for most consistent results. Its always better to start from less and then extend in order to find the pivot points in your data.We can use --EID-Filter flag which will only parse and pass the rules through most important events relevent to incidents(meaning it will ignore the event ids which are not usually related to the incident). We can use -T for a timeline graph to see spikes in events
@@ -379,6 +381,12 @@ We can then use chainsaw to validate further or use evtxecmd(preferred) for more
 Create a jsonl timeline instead of csv from hayabusa and pass that to takajo to find any quick wins
 - .\takajo-2.1.0-win-x64.exe timeline-suspicious-processes -t "C:\Users\CyberJunkie\Downloads\hayabusa-2.10.1-win-64-bit\test.jsonl" --output "C:\Users\CyberJunkie\Downloads\takajo-2.1.0-win-x64\takajo-2.1.0-win-x64\res.csv"
 https://www.youtube.com/watch?v=HXNAnxADRGE&t=1365s
+
+
+ ## Using Chainsaw 
+
+The below command will utilise all the rules and apply on event logs.
+- chainsaw_x86_64-pc-windows-msvc.exe hunt "C:\Users\CyberJunkie\Desktop\mem\" -s .\sigma\ --mapping mappings/sigma-event-logs-all.yml -r .\rules\ -o results.csv --full
  
  
  
