@@ -385,7 +385,8 @@ https://www.youtube.com/watch?v=HXNAnxADRGE&t=1365s
 
  ## Using Chainsaw 
 
-The below command will utilise all the rules and apply on event logs.
+The below command will utilise all the rules and apply on event logs.This will output in table format. Good for terminal analysis not csv.
+For csv output we can use --csv instead of --full
 - chainsaw_x86_64-pc-windows-msvc.exe hunt "C:\Users\CyberJunkie\Desktop\mem\" -s .\sigma\ --mapping mappings/sigma-event-logs-all.yml -r .\rules\ -o results.csv --full
  
  
