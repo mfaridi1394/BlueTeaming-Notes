@@ -525,6 +525,7 @@ reference : https://www.ctfiot.com/147957.html
 2- can be add through this [reg add HKCU\Environment /v UserInitMprLogonScript /t REG_SZ /d C:\Windows\ReverseShell\Payload.exe /f] the key HKCU\Environment contains this.
 3- run keys, startup etc
 4- Default file extensions HKLM\Software\Classes\
+5- Image file execution
 
 
 
